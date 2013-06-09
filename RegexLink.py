@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import csv
 import os
 import re
@@ -20,9 +21,11 @@ def make_symlink(path, dest):
         os.makedirs(dirs)
     if not os.path.exists(path):
         os.symlink(dest, path)
-        print("Made symlink from {0} -> {1}".format(path,dest))
+        if not args.quiet:
+            print("Created symlink from {0} -> {1}".format(path,dest))
     else:
-        print("symlink {0} already exists, skipping".format(path))
+        if not args.quiet:
+            print("{0} already exists, skipping".format(path))
 
 def build_symlinks(patterns, in_path, out_path):
     in_path = os.path.abspath(in_path)
@@ -40,5 +43,18 @@ def build_symlinks(patterns, in_path, out_path):
                     break
                         
 if __name__ == "__main__":
-    patterns = load_patterns("patterns.txt")
-    build_symlinks(patterns, "in", "out")
+    parser = argparse.ArgumentParser(description="Generate symbolic links according to regular expression based rules")
+
+    parser.add_argument("source", help="Path to scan for files")
+    parser.add_argument("destination", help="Directory to create symlinks in")
+    parser.add_argument("match", help="Regular expression to scan the target path for")
+    parser.add_argument("substitution", help="Regular expression to create a file with")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Create symlinks quietly")
+    parser.add_argument("-v", "--version", action="version", version="%(prog)s 1.0")
+
+    global args
+    args = parser.parse_args()
+
+    pattern = [[args.match,args.substitution]]
+
+    build_symlinks(pattern, args.source, args.destination)
